@@ -48,17 +48,26 @@ ORDER BY title;
 -- END Exercice 02
 
 -- BEGIN Exercice 03
-/*Donnez l’ensemble des films (titre, annee_sortie) classés (rating) R, ayant une durée de moins
-de 60 minutes et dont les coûts de remplacements sont 12.99$, en les ordonnant par titre.*/
+/*Listez le pays, la ville et le numéro postal (country, city, postal_code) des villes française, ainsi
+que des villes dont le numéro de pays est entre 63 et 67 (bornes comprises), en les ordonnant par
+pays puis par ville et finalement par code postal. N’utilisez pas de BETWEEN.*/
 SELECT
-    title AS titre,
-    release_year AS annee_sortie
-FROM film AS f
+    country AS pays,
+    city AS ville,
+    postal_code AS "numéro postal"
+FROM address AS a
+LEFT JOIN city AS ci
+    ON a.city_id = ci.city_id
+LEFT JOIN country AS co
+    ON ci.country_id = co.country_id
 WHERE
-    f.rating = 'R'
-    AND f.length < 60
-    AND f.replacement_cost = 12.99
-ORDER BY f.title;
+    co.country = 'France' OR
+        (co.country_id >= 63 AND
+         co.country_id <= 67)
+ORDER BY
+    co.country,
+    ci.city,
+    a.postal_code;
 /*SEP*/
     SELECT country.country AS pays, city.city AS ville, address.postal_code AS code_postal
 FROM country

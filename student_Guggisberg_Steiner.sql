@@ -22,19 +22,13 @@ WHERE f.rating = 'R'
   AND f.length < 60
   AND f.replacement_cost = 12.99
 ORDER BY f.title;
-/*SEP*/
-SELECT title AS titre, release_year AS annee_sortie
-FROM film
-WHERE rating = 'R'
-  AND length < 60
-  AND replacement_cost = 12.99
-ORDER BY title;
 -- END Exercice 02
 
 -- BEGIN Exercice 03
 /*Listez le pays, la ville et le numéro postal (country, city, postal_code) des villes française, ainsi
 que des villes dont le numéro de pays est entre 63 et 67 (bornes comprises), en les ordonnant par
 pays puis par ville et finalement par code postal. N’utilisez pas de BETWEEN.*/
+/* JOIN marche aussi à la place de LEFT JOIN */
 SELECT country     AS pays,
        city        AS ville,
        postal_code AS "numéro postal"
@@ -49,57 +43,14 @@ WHERE co.country = 'France'
 ORDER BY co.country,
          ci.city,
          a.postal_code;
-/*SEP*/
-SELECT country.country AS pays, city.city AS ville, address.postal_code AS code_postal
-FROM country
-         JOIN city ON country.country_id = city.country_id
-         JOIN address ON city.city_id = address.city_id
-WHERE country.country = 'France'
-   OR (country.country_id >= 63 AND country.country_id <= 67)
-ORDER BY country.country, city.city, address.postal_code;
 -- END Exercice 03
 
 -- BEGIN Exercice 04
 /*Listez tous les clients actifs (customer_id, prenom, nom) habitant la ville 171, et rattachés au
 magasin numéro 1. Triez-les par ordre alphabétique des prénoms */
-SELECT customer_id,
-       first_name AS prenom,
-       last_name  AS nom,
-       c.store_id
-FROM customer AS c
-         LEFT JOIN address AS a
-                   ON c.address_id = a.address_id
-         LEFT JOIN store AS s
-                   ON a.address_id = s.address_id
-WHERE a.city_id = 171
-  AND c.store_id = 1
-  AND s.store_id IS NOT NULL
-ORDER BY c.first_name;
-
-SELECT *
-FROM store
-WHERE store_id = 1;
-SELECT *
-FROM staff;
-SELECT *
-FROM address
-WHERE city_id = 171;
-
-SELECT customer_id,
-       first_name AS prenom,
-       last_name  AS nom
-FROM customer AS c
-         LEFT JOIN address AS a
-                   ON c.address_id = a.address_id
-WHERE c.store_id = 1
-  AND a.city_id = 171
-ORDER BY c.first_name;
-
-/*SELECT * FROM address WHERE address.city_id = 171 AND address.address_id IN (
-SELECT address_id FROM customer WHERE customer.store_id = 1);
-SELECT address_id FROM customer WHERE customer.store_id = 1 AND first_name = 'ALICE';--*/
-/*SEP*/
-SELECT customer.customer_id, customer.first_name AS prenom, customer.last_name AS nom
+SELECT customer.customer_id,
+       customer.first_name AS prenom,
+       customer.last_name  AS nom
 FROM customer
          JOIN address ON customer.address_id = address.address_id
          JOIN city ON address.city_id = city.city_id
@@ -112,24 +63,6 @@ ORDER BY customer.first_name;
 /*Donnez le nom et le prénom (prenom_1, nom_1, prenom_2, nom_2) des clients qui ont loué au
 moins une fois le même film (par exemple, si ALAN et BEN ont loué le film MATRIX, mais pas TRACY,
 seuls ALAN et BEN doivent être listés)*/
-SELECT count(*)
-FROM rental;
-
-SELECT f.film_id, c.customer_id
-FROM rental AS r
-         LEFT JOIN inventory AS i
-                   ON r.inventory_id = i.inventory_id
-         LEFT JOIN film AS f
-                   ON i.film_id = f.film_id
-         LEFT JOIN customer AS c
-                   ON r.customer_id = c.customer_id
-ORDER BY film_id, customer_id;
-
-
-SELECT count(*)
-FROM inventory;
-
-/*SEP*/
 SELECT c1.first_name AS prenom_1, c1.last_name AS nom_1, c2.first_name AS prenom_2, c2.last_name AS nom_2
 FROM rental r1
          JOIN rental r2 ON r1.inventory_id = r2.inventory_id AND r1.rental_id < r2.rental_id
@@ -143,16 +76,6 @@ ORDER BY prenom_1, nom_1, prenom_2, nom_2;
 /*Donnez le nom et le prénom des acteurs (nom, prenom) ayant joué dans un film d’horreur, dont le
 prénom commence par K, ou dont le nom de famille commence par D sans utiliser le mot clé
 JOIN.*/
-SELECT *
-FROM film AS f;
-SELECT *
-FROM film_category AS fc;
-SELECT category_id
-FROM category
-WHERE name = 'Horror';
-SELECT last_name AS nom, first_name AS prenom
-FROM actor;
-/*SEP*/
 SELECT DISTINCT actor.last_name AS nom, actor.first_name AS prenom
 FROM actor
 WHERE actor_id IN (SELECT actor_id

@@ -167,7 +167,7 @@ WHERE customer.customer_id IN (SELECT rental.customer_id
 -- END Exercice 09 (Bonus)
 
 -- BEGIN Exercice 10
-SELECT film.title AS titre,
+SELECT film.title                 AS titre,
        COUNT(film_actor.actor_id) AS nb_acteurs
 FROM film
          JOIN film_actor ON film.film_id = film_actor.film_id
@@ -182,8 +182,8 @@ ORDER BY nb_acteurs DESC;
 -- END Exercice 10
 
 -- BEGIN Exercice 11
-SELECT category.category_id AS id,
-       category.name AS nom,
+SELECT category.category_id         AS id,
+       category.name                AS nom,
        COUNT(film_category.film_id) AS nb_films
 FROM category
          JOIN film_category ON category.category_id = film_category.category_id
@@ -195,8 +195,8 @@ ORDER BY nb_films;
 
 -- BEGIN Exercice 12
 SELECT film.film_id AS id,
-       film.title AS titre,
-       film.length AS duree
+       film.title   AS titre,
+       film.length  AS duree
 FROM film
 WHERE film.length = (SELECT MIN(length)
                      FROM film);
@@ -206,7 +206,7 @@ WHERE film.length = (SELECT MIN(length)
 -- BEGIN Exercice 13a
 /* TODO ERROR */
 SELECT film.film_id AS id,
-       film.title AS titre
+       film.title   AS titre
 FROM film
 WHERE film.film_id IN (SELECT DISTINCT film_actor.film_id
                        FROM film_actor
@@ -219,16 +219,14 @@ ORDER BY film.title;
 -- BEGIN Exercice 13b
 /* TODO retourne vide */
 SELECT DISTINCT film.film_id AS id,
-                film.title AS titre
+                film.title   AS titre
 FROM film
-JOIN film_actor ON film.film_id = film_actor.film_id
-JOIN (
-    SELECT film_actor.film_id
-    FROM film_actor
-    JOIN actor ON film_actor.actor_id = actor.actor_id
-    GROUP BY film_actor.film_id
-    HAVING COUNT(DISTINCT actor.actor_id) > 40
-) AS prolific_films ON film.film_id = prolific_films.film_id
+         JOIN film_actor ON film.film_id = film_actor.film_id
+         JOIN (SELECT film_actor.film_id
+               FROM film_actor
+                        JOIN actor ON film_actor.actor_id = actor.actor_id
+               GROUP BY film_actor.film_id
+               HAVING COUNT(DISTINCT actor.actor_id) > 40) AS prolific_films ON film.film_id = prolific_films.film_id
 ORDER BY film.title;
 -- END Exercice 13b
 

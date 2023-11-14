@@ -1,31 +1,16 @@
 SET search_path = pagila;
 
 -- BEGIN Exercice 01
-/*
-SELECT
-  *
-FROM toto AS T
-WHERE
-  T.name = 'Coucou'
-  AND T.age = 22
-ORDER BY T.date; --*/
 /* Donnez le numéro, le nom et l’email (customer_id, nom, email) des clients dont le prénom est
 PHYLLIS, qui sont rattachés au magasin numéro 1, ordonnés par numéro de client décroissant.*/
-SELECT DISTINCT
-    customer_id, last_name AS nom, email AS email
+SELECT customer_id,
+       last_name AS nom,
+       email AS email
 FROM customer as c
 WHERE
     c.first_name = 'PHYLLIS'
-    AND c. store_id = 1
+    AND c.store_id = 1
 ORDER BY c.customer_id DESC;
-/*SEP*/
-SELECT customer_id, last_name AS nom, email
-FROM customer
-JOIN address ON customer.address_id = address.address_id
-JOIN city ON address.city_id = city.city_id
-JOIN country ON city.country_id = country.country_id
-WHERE first_name = 'PHYLLIS' AND store_id = 1
-ORDER BY customer_id DESC;
 -- END Exercice 01
 
 -- BEGIN Exercice 02

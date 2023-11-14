@@ -78,7 +78,9 @@ WHERE actor_id IN (SELECT actor_id
 -- END Exercice 06
 
 -- BEGIN Exercice 07a
-SELECT film_id AS id, title AS titre, rental_rate AS prix_de_location_par_jour
+SELECT film_id     AS id,
+       title       AS titre,
+       rental_rate AS prix_de_location_par_jour
 FROM film
 WHERE rental_rate <= 1.00
   AND film_id NOT IN (SELECT DISTINCT inventory.film_id
@@ -87,7 +89,9 @@ WHERE rental_rate <= 1.00
 -- END Exercice 07a
 
 -- BEGIN Exercice 07b
-SELECT film_id AS id, title AS titre, rental_rate AS prix_de_location_par_jour
+SELECT film_id     AS id,
+       title       AS titre,
+       rental_rate AS prix_de_location_par_jour
 FROM film
 WHERE rental_rate <= 1.00
   AND NOT EXISTS (SELECT 1
@@ -97,11 +101,14 @@ WHERE rental_rate <= 1.00
 -- END Exercice 07b
 
 -- BEGIN Exercice 08a
-SELECT customer.customer_id AS id, customer.last_name AS nom, customer.first_name AS prenom
+SELECT customer.customer_id AS id,
+       customer.last_name   AS nom,
+       customer.first_name  AS prenom
 FROM customer
-WHERE customer.country_id = (SELECT country_id
-                             FROM country
-                             WHERE country = 'Spain')
+         JOIN address ON customer.address_id = address.address_id
+         JOIN city ON address.city_id = city.city_id
+         JOIN country ON city.country_id = country.country_id
+WHERE country.country = 'Spain'
   AND EXISTS (SELECT 1
               FROM rental
               WHERE rental.customer_id = customer.customer_id
@@ -109,29 +116,38 @@ WHERE customer.country_id = (SELECT country_id
 -- END Exercice 08a
 
 -- BEGIN Exercice 08b
-SELECT customer.customer_id AS id, customer.last_name AS nom, customer.first_name AS prenom
+SELECT customer.customer_id AS id,
+       customer.last_name   AS nom,
+       customer.first_name  AS prenom
 FROM customer
-WHERE customer.country_id = (SELECT country_id
-                             FROM country
-                             WHERE country = 'Spain')
+         JOIN address ON customer.address_id = address.address_id
+         JOIN city ON address.city_id = city.city_id
+         JOIN country ON city.country_id = country.country_id
+WHERE country.country = 'Spain'
   AND customer.customer_id IN (SELECT DISTINCT rental.customer_id
                                FROM rental
                                WHERE rental.return_date IS NULL);
 -- END Exercice 08b
 
 -- BEGIN Exercice 08c
-SELECT DISTINCT customer.customer_id AS id, customer.last_name AS nom, customer.first_name AS prenom
-FROM customer,
-     rental
-WHERE customer.country_id = (SELECT country_id
-                             FROM country
-                             WHERE country = 'Spain')
+SELECT customer.customer_id AS id,
+       customer.last_name   AS nom,
+       customer.first_name  AS prenom
+FROM rental,
+     customer
+         JOIN address ON customer.address_id = address.address_id
+         JOIN city ON address.city_id = city.city_id
+         JOIN country ON city.country_id = country.country_id
+WHERE country.country = 'Spain'
   AND customer.customer_id = rental.customer_id
   AND rental.return_date IS NULL;
 -- END Exercice 08c
 
 -- BEGIN Exercice 09 (Bonus)
-SELECT customer.customer_id, customer.first_name AS prenom, customer.last_name AS nom
+/* TODO retourne vide */
+SELECT customer.customer_id,
+       customer.first_name AS prenom,
+       customer.last_name  AS nom
 FROM customer
 WHERE customer.customer_id IN (SELECT rental.customer_id
                                FROM rental
@@ -151,29 +167,36 @@ WHERE customer.customer_id IN (SELECT rental.customer_id
 -- END Exercice 09 (Bonus)
 
 -- BEGIN Exercice 10
-SELECT film.title AS titre, COUNT(film_actor.actor_id) AS nb_acteurs
+SELECT film.title AS titre,
+       COUNT(film_actor.actor_id) AS nb_acteurs
 FROM film
          JOIN film_actor ON film.film_id = film_actor.film_id
          JOIN actor ON film_actor.actor_id = actor.actor_id
          JOIN film_category ON film.film_id = film_category.film_id
          JOIN category ON film_category.category_id = category.category_id
 WHERE category.name = 'Drama'
-GROUP BY film.film_id, film.title
+GROUP BY film.film_id,
+         film.title
 HAVING COUNT(film_actor.actor_id) < 5
 ORDER BY nb_acteurs DESC;
 -- END Exercice 10
 
 -- BEGIN Exercice 11
-SELECT category.category_id AS id, category.name AS nom, COUNT(film_category.film_id) AS nb_films
+SELECT category.category_id AS id,
+       category.name AS nom,
+       COUNT(film_category.film_id) AS nb_films
 FROM category
          JOIN film_category ON category.category_id = film_category.category_id
-GROUP BY category.category_id, category.name
+GROUP BY category.category_id,
+         category.name
 HAVING COUNT(film_category.film_id) > 65
 ORDER BY nb_films;
 -- END Exercice 11
 
 -- BEGIN Exercice 12
-SELECT film.film_id AS id, film.title AS titre, film.length AS duree
+SELECT film.film_id AS id,
+       film.title AS titre,
+       film.length AS duree
 FROM film
 WHERE film.length = (SELECT MIN(length)
                      FROM film);
@@ -181,7 +204,9 @@ WHERE film.length = (SELECT MIN(length)
 
 
 -- BEGIN Exercice 13a
-SELECT film.film_id AS id, film.title AS titre
+/* TODO ERROR */
+SELECT film.film_id AS id,
+       film.title AS titre
 FROM film
 WHERE film.film_id IN (SELECT DISTINCT film_actor.film_id
                        FROM film_actor
@@ -192,14 +217,18 @@ ORDER BY film.title;
 -- END Exercice 13a
 
 -- BEGIN Exercice 13b
-SELECT DISTINCT film.film_id AS id, film.title AS titre
+/* TODO retourne vide */
+SELECT DISTINCT film.film_id AS id,
+                film.title AS titre
 FROM film
-         JOIN film_actor ON film.film_id = film_actor.film_id
-         JOIN actor ON film_actor.actor_id = actor.actor_id
-         JOIN (SELECT film_actor.actor_id
-               FROM film_actor
-               GROUP BY film_actor.actor_id
-               HAVING COUNT(film_actor.film_id) > 40) AS prolific_actors ON actor.actor_id = prolific_actors.actor_id
+JOIN film_actor ON film.film_id = film_actor.film_id
+JOIN (
+    SELECT film_actor.film_id
+    FROM film_actor
+    JOIN actor ON film_actor.actor_id = actor.actor_id
+    GROUP BY film_actor.film_id
+    HAVING COUNT(DISTINCT actor.actor_id) > 40
+) AS prolific_films ON film.film_id = prolific_films.film_id
 ORDER BY film.title;
 -- END Exercice 13b
 
@@ -247,6 +276,11 @@ SELECT COUNT(*) AS nb_paiements_inf_ou_egaux_a_9
 FROM payment
 WHERE amount <= 9;
 -- END Exercice 16a
+
+/* -------------------------------------------------------------------------------------------------
+   Les requêtes ci-dessous éditent la DB !
+   -------------------------------------------------------------------------------------------------
+ */
 
 -- BEGIN Exercice 16b
 DELETE

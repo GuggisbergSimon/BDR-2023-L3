@@ -1,8 +1,6 @@
 SET search_path = pagila;
 
 -- BEGIN Exercice 01
-/* Donnez le numéro, le nom et l’email (customer_id, nom, email) des clients dont le prénom est
-PHYLLIS, qui sont rattachés au magasin numéro 1, ordonnés par numéro de client décroissant.*/
 SELECT customer_id,
        last_name AS nom,
        email     AS email
@@ -13,8 +11,6 @@ ORDER BY c.customer_id DESC;
 -- END Exercice 01
 
 -- BEGIN Exercice 02
-/*Donnez l’ensemble des films (titre, annee_sortie) classés (rating) R, ayant une durée de moins
-de 60 minutes et dont les coûts de remplacements sont 12.99$, en les ordonnant par titre.*/
 SELECT title        AS titre,
        release_year AS annee_sortie
 FROM film AS f
@@ -25,9 +21,6 @@ ORDER BY f.title;
 -- END Exercice 02
 
 -- BEGIN Exercice 03
-/*Listez le pays, la ville et le numéro postal (country, city, postal_code) des villes française, ainsi
-que des villes dont le numéro de pays est entre 63 et 67 (bornes comprises), en les ordonnant par
-pays puis par ville et finalement par code postal. N’utilisez pas de BETWEEN.*/
 /* JOIN marche aussi à la place de LEFT JOIN */
 SELECT country     AS pays,
        city        AS ville,
@@ -46,8 +39,6 @@ ORDER BY co.country,
 -- END Exercice 03
 
 -- BEGIN Exercice 04
-/*Listez tous les clients actifs (customer_id, prenom, nom) habitant la ville 171, et rattachés au
-magasin numéro 1. Triez-les par ordre alphabétique des prénoms */
 SELECT customer.customer_id,
        customer.first_name AS prenom,
        customer.last_name  AS nom
@@ -60,10 +51,10 @@ ORDER BY customer.first_name;
 -- END Exercice 04
 
 -- BEGIN Exercice 05
-/*Donnez le nom et le prénom (prenom_1, nom_1, prenom_2, nom_2) des clients qui ont loué au
-moins une fois le même film (par exemple, si ALAN et BEN ont loué le film MATRIX, mais pas TRACY,
-seuls ALAN et BEN doivent être listés)*/
-SELECT c1.first_name AS prenom_1, c1.last_name AS nom_1, c2.first_name AS prenom_2, c2.last_name AS nom_2
+SELECT c1.first_name AS prenom_1,
+       c1.last_name  AS nom_1,
+       c2.first_name AS prenom_2,
+       c2.last_name  AS nom_2
 FROM rental r1
          JOIN rental r2 ON r1.inventory_id = r2.inventory_id AND r1.rental_id < r2.rental_id
          JOIN customer c1 ON r1.customer_id = c1.customer_id
@@ -73,18 +64,16 @@ ORDER BY prenom_1, nom_1, prenom_2, nom_2;
 -- END Exercice 05
 
 -- BEGIN Exercice 06
-/*Donnez le nom et le prénom des acteurs (nom, prenom) ayant joué dans un film d’horreur, dont le
-prénom commence par K, ou dont le nom de famille commence par D sans utiliser le mot clé
-JOIN.*/
-SELECT DISTINCT actor.last_name AS nom, actor.first_name AS prenom
+SELECT DISTINCT actor.last_name  AS nom,
+                actor.first_name AS prenom
 FROM actor
 WHERE actor_id IN (SELECT actor_id
                    FROM film_actor
                    WHERE film_id IN (SELECT film_id
-                                     FROM film
-                                     WHERE genre_id IN (SELECT genre_id
-                                                        FROM genre
-                                                        WHERE name = 'Horror')))
+                                     FROM film_category
+                                     WHERE category_id IN (SELECT category_id
+                                                           FROM category
+                                                           WHERE name = 'Horror')))
   AND (actor.first_name LIKE 'K%' OR actor.last_name LIKE 'D%');
 -- END Exercice 06
 

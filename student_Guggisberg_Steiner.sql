@@ -78,11 +78,13 @@ WHERE actor_id IN (SELECT actor_id
 -- END Exercice 06
 
 -- BEGIN Exercice 07a
+/* rental_rate est le prix pour une rental_duration. rental_duration est en jour */
+/* TODO not use IN*/
 SELECT film_id     AS id,
        title       AS titre,
-       rental_rate AS prix_de_location_par_jour
+       rental_rate / rental_duration AS prix_de_location_par_jour
 FROM film
-WHERE rental_rate <= 1.00
+WHERE rental_rate / rental_duration <= 1.00
   AND film_id NOT IN (SELECT DISTINCT inventory.film_id
                       FROM inventory
                                JOIN rental ON inventory.inventory_id = rental.inventory_id);
@@ -91,9 +93,9 @@ WHERE rental_rate <= 1.00
 -- BEGIN Exercice 07b
 SELECT film_id     AS id,
        title       AS titre,
-       rental_rate AS prix_de_location_par_jour
+       rental_rate / rental_duration AS prix_de_location_par_jour
 FROM film
-WHERE rental_rate <= 1.00
+WHERE rental_rate / rental_duration <= 1.00
   AND NOT EXISTS (SELECT 1
                   FROM inventory
                            JOIN rental ON inventory.inventory_id = rental.inventory_id

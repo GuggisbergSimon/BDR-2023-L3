@@ -79,20 +79,21 @@ WHERE actor_id IN (SELECT actor_id
 
 -- BEGIN Exercice 07a
 /* rental_rate est le prix pour une rental_duration. rental_duration est en jour */
-/* TODO not use IN*/
-SELECT film_id     AS id,
-       title       AS titre,
-       rental_rate / rental_duration AS prix_de_location_par_jour
+SELECT film.film_id                            AS id,
+       film.title                              AS titre,
+       film.rental_rate / film.rental_duration AS prix_de_location_par_jour
 FROM film
-WHERE rental_rate / rental_duration <= 1.00
-  AND film_id NOT IN (SELECT DISTINCT inventory.film_id
-                      FROM inventory
-                               JOIN rental ON inventory.inventory_id = rental.inventory_id);
+         LEFT JOIN (SELECT DISTINCT inventory.film_id
+                    FROM inventory
+                             JOIN rental ON inventory.inventory_id = rental.inventory_id) AS rented_films
+                   ON film.film_id = rented_films.film_id
+WHERE film.rental_rate / film.rental_duration <= 1.00
+  AND rented_films.film_id IS NULL;
 -- END Exercice 07a
 
 -- BEGIN Exercice 07b
-SELECT film_id     AS id,
-       title       AS titre,
+SELECT film_id                       AS id,
+       title                         AS titre,
        rental_rate / rental_duration AS prix_de_location_par_jour
 FROM film
 WHERE rental_rate / rental_duration <= 1.00
@@ -206,34 +207,38 @@ WHERE film.length = (SELECT MIN(length)
 
 
 -- BEGIN Exercice 13a
-/* TODO ERROR */
 SELECT film.film_id AS id,
        film.title   AS titre
 FROM film
-WHERE film.film_id IN (SELECT DISTINCT film_actor.film_id
+WHERE film.film_id IN (SELECT film_actor.film_id
                        FROM film_actor
-                                JOIN actor ON film_actor.actor_id = actor.actor_id
-                       GROUP BY film_actor.actor_id
-                       HAVING COUNT(film_actor.film_id) > 40)
+                       WHERE film_actor.actor_id IN
+                             (SELECT actor.actor_id
+                              FROM actor
+                                       JOIN film_actor ON actor.actor_id = film_actor.actor_id
+                              GROUP BY actor.actor_id
+                              HAVING COUNT(film_actor.film_id) > 40))
 ORDER BY film.title;
 -- END Exercice 13a
 
+
 -- BEGIN Exercice 13b
-/* TODO retourne vide */
 SELECT DISTINCT film.film_id AS id,
                 film.title   AS titre
 FROM film
          JOIN film_actor ON film.film_id = film_actor.film_id
-         JOIN (SELECT film_actor.film_id
-               FROM film_actor
-                        JOIN actor ON film_actor.actor_id = actor.actor_id
-               GROUP BY film_actor.film_id
-               HAVING COUNT(DISTINCT actor.actor_id) > 40) AS prolific_films ON film.film_id = prolific_films.film_id
+         JOIN (SELECT actor.actor_id
+               FROM actor
+                        JOIN film_actor ON actor.actor_id = film_actor.actor_id
+               GROUP BY actor.actor_id
+               HAVING COUNT(film_actor.film_id) > 40) AS famous_actors
+              ON film_actor.actor_id = famous_actors.actor_id
 ORDER BY film.title;
 -- END Exercice 13b
 
 -- BEGIN Exercice 14
-SELECT CEIL(SUM(length) / 8) AS nb_jours
+/* length est en minutes. la conversion minutes->jours est divisé par 60 * 8 car uniquement 8h par jour (petit joueur) */
+SELECT CEIL(SUM(length) / (60 * 8)) AS nb_jours
 FROM film;
 -- END Exercice 14
 

@@ -22,9 +22,9 @@ ORDER BY f.title;
 
 -- BEGIN Exercice 03
 /* JOIN marche aussi à la place de LEFT JOIN */
-SELECT country     AS pays,
-       city        AS ville,
-       postal_code AS "numéro postal"
+SELECT country     AS country,
+       city        AS city,
+       postal_code AS postal_code
 FROM address AS a
          LEFT JOIN city AS ci
                    ON a.city_id = ci.city_id
@@ -39,26 +39,31 @@ ORDER BY co.country,
 -- END Exercice 03
 
 -- BEGIN Exercice 04
-SELECT customer.customer_id,
-       customer.first_name AS prenom,
-       customer.last_name  AS nom
-FROM customer
-         JOIN address ON customer.address_id = address.address_id
-         JOIN city ON address.city_id = city.city_id
-WHERE city.city_id = 171
-  AND customer.store_id = 1
-ORDER BY customer.first_name;
+SELECT cu.customer_id,
+       cu.first_name AS prenom,
+       cu.last_name  AS nom
+FROM customer AS cu
+         JOIN address AS a
+             ON cu.address_id = a.address_id
+WHERE a.city_id = 171
+  AND cu.store_id = 1
+ORDER BY cu.first_name;
 -- END Exercice 04
 
 -- BEGIN Exercice 05
-SELECT c1.first_name AS prenom_1,
+SELECT DISTINCT
+    c1.first_name AS prenom_1,
        c1.last_name  AS nom_1,
        c2.first_name AS prenom_2,
        c2.last_name  AS nom_2
-FROM rental r1
-         JOIN rental r2 ON r1.inventory_id = r2.inventory_id AND r1.rental_id < r2.rental_id
-         JOIN customer c1 ON r1.customer_id = c1.customer_id
-         JOIN customer c2 ON r2.customer_id = c2.customer_id
+FROM rental AS r1
+         JOIN rental AS r2
+             ON  r1.inventory_id = r2.inventory_id AND
+                 r1.rental_id < r2.rental_id
+         JOIN customer AS c1
+             ON r1.customer_id = c1.customer_id
+         JOIN customer AS c2
+             ON r2.customer_id = c2.customer_id
 WHERE c1.customer_id < c2.customer_id
 ORDER BY prenom_1, nom_1, prenom_2, nom_2;
 -- END Exercice 05
@@ -73,22 +78,30 @@ WHERE actor_id IN (SELECT actor_id
                                      FROM film_category
                                      WHERE category_id IN (SELECT category_id
                                                            FROM category
-                                                           WHERE name = 'Horror')))
+                                                           WHERE name = 'Horror'
+                                                           )
+                                     )
+                   )
   AND (actor.first_name LIKE 'K%' OR actor.last_name LIKE 'D%');
 -- END Exercice 06
 
 -- BEGIN Exercice 07a
 /* rental_rate est le prix pour une rental_duration. rental_duration est en jour */
-SELECT film.film_id                            AS id,
-       film.title                              AS titre,
-       film.rental_rate / film.rental_duration AS prix_de_location_par_jour
-FROM film
-         LEFT JOIN (SELECT DISTINCT inventory.film_id
-                    FROM inventory
-                             JOIN rental ON inventory.inventory_id = rental.inventory_id) AS rented_films
-                   ON film.film_id = rented_films.film_id
-WHERE film.rental_rate / film.rental_duration <= 1.00
-  AND rented_films.film_id IS NULL;
+SELECT
+    f.film_id AS id,
+    f.title AS titre,
+    f.rental_rate / f.rental_duration AS prix_de_location_par_jour
+FROM film AS f
+LEFT JOIN inventory AS i
+    ON f.film_id = i.film_id
+LEFT JOIN rental AS r
+    ON i.inventory_id = r.inventory_id
+GROUP BY
+    f.film_id,
+    rental_rate,
+    rental_duration
+HAVING COUNT(r.rental_id) = 0 AND
+       rental_rate / rental_duration <= 1.00;-- ok
 -- END Exercice 07a
 
 -- BEGIN Exercice 07b
@@ -147,7 +160,7 @@ WHERE country.country = 'Spain'
 -- END Exercice 08c
 
 -- BEGIN Exercice 09 (Bonus)
-/* TODO retourne vide */
+/*
 SELECT customer.customer_id,
        customer.first_name AS prenom,
        customer.last_name  AS nom
@@ -158,15 +171,68 @@ WHERE customer.customer_id IN (SELECT rental.customer_id
                                         JOIN film_actor ON inventory.film_id = film_actor.film_id
                                         JOIN actor ON film_actor.actor_id = actor.actor_id
                                WHERE actor.first_name = 'EMILY'
-                                 AND actor.last_name = 'DEE')
-  AND customer.customer_id NOT IN (SELECT customer.customer_id
-                                   FROM rental
-                                            JOIN inventory ON rental.inventory_id = inventory.inventory_id
-                                            JOIN film_actor ON inventory.film_id = film_actor.film_id
-                                            JOIN actor ON film_actor.actor_id = actor.actor_id
-                                   WHERE actor.first_name = 'EMILY'
-                                     AND actor.last_name = 'DEE'
-                                     AND rental.return_date IS NULL);
+                                 AND actor.last_name = 'DEE');--*/
+/*
+-- films ids :
+SELECT count(film.film_id)
+FROM film
+LEFT JOIN film_actor
+    ON film.film_id = film_actor.film_id
+LEFT JOIN actor
+    ON film_actor.actor_id = actor.actor_id
+WHERE
+    actor.first_name = 'EMILY' AND
+    actor.last_name = 'DEE';
+
+SELECT
+    customer_id,
+    count(customer_id) AS number_of_rental
+FROM rental
+LEFT JOIN inventory
+    ON rental.inventory_id = inventory.inventory_id
+WHERE film_id IN
+    (
+    SELECT film.film_id
+    FROM film
+    LEFT JOIN film_actor
+        ON film.film_id = film_actor.film_id
+    LEFT JOIN actor
+        ON film_actor.actor_id = actor.actor_id
+    WHERE
+        actor.first_name = 'EMILY' AND
+        actor.last_name = 'DEE'
+    )
+GROUP BY customer_id
+HAVING count(customer_id) >= 14
+ORDER BY
+    number_of_rental DESC,
+    customer_id DESC;
+*/
+
+WITH filmIds AS (
+    SELECT film_id
+    FROM film_actor AS fa
+    JOIN actor AS a
+        ON fa.actor_id = a.actor_id
+    WHERE
+        a.first_name = 'EMILY' AND
+        a.last_name = 'DEE'
+)
+SELECT
+    c.customer_id,
+    c.first_name AS prenom,
+    c.last_name  AS nom
+FROM customer AS c
+JOIN rental AS r
+    ON c.customer_id = r.customer_id
+JOIN inventory AS i
+    ON r.inventory_id = i.inventory_id
+JOIN filmIds AS e
+    ON i.film_id = e.film_id
+GROUP BY c.customer_id
+HAVING
+    COUNT(DISTINCT e.film_id) = (SELECT COUNT(*) FROM filmIds); -- ok
+
 -- END Exercice 09 (Bonus)
 
 -- BEGIN Exercice 10

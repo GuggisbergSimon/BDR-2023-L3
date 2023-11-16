@@ -116,11 +116,25 @@ WHERE (f.rental_rate / f.rental_duration) <= 1.00 AND
       r.rental_id IS NULL;
 
 SELECT *
+FROM inventory AS i
+    LEFT JOIN film AS f
+        ON f.film_id = i.film_id
+    LEFT JOIN rental AS r
+        ON i.inventory_id = r.inventory_id
+WHERE (f.rental_rate / f.rental_duration) <= 1.00 AND
+      r.rental_id IS NULL;
+
+SELECT *
 FROM rental
     LEFT JOIN inventory
          ON rental.inventory_id = inventory.inventory_id
-LEFT JOIN film
-ON inventory.film_id = film.film_id
+    LEFT JOIN film
+        ON inventory.film_id = film.film_id
+WHERE inventory.film_id = 1;
+
+SELECT * FROM inventory
+LEFT JOIN rental AS r
+    ON inventory.inventory_id = r.inventory_id
 WHERE inventory.film_id = 1;
 -- END Exercice 07a
 

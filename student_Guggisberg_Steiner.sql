@@ -51,21 +51,39 @@ ORDER BY cu.first_name;
 -- END Exercice 04
 
 -- BEGIN Exercice 05
-SELECT DISTINCT
+SELECT
     c1.first_name AS prenom_1,
-       c1.last_name  AS nom_1,
-       c2.first_name AS prenom_2,
-       c2.last_name  AS nom_2
-FROM rental AS r1
-         JOIN rental AS r2
-             ON  r1.inventory_id = r2.inventory_id AND
-                 r1.rental_id < r2.rental_id
-         JOIN customer AS c1
-             ON r1.customer_id = c1.customer_id
-         JOIN customer AS c2
-             ON r2.customer_id = c2.customer_id
-WHERE c1.customer_id < c2.customer_id
-ORDER BY prenom_1, nom_1, prenom_2, nom_2;
+    c1.last_name AS nom_1,
+    c2.first_name AS prenom_2,
+    c2.last_name AS nom_2
+FROM customer AS c1
+JOIN rental AS r1
+    ON c1.customer_id = r1.customer_id
+JOIN inventory AS i1
+    ON r1.inventory_id = i1.inventory_id
+JOIN film AS f
+    ON i1.film_id = f.film_id
+JOIN inventory AS i2
+    ON f.film_id = i2.film_id
+JOIN rental AS r2
+    ON i2.inventory_id = r2.inventory_id
+JOIN customer AS c2
+    ON r2.customer_id = c2.customer_id
+WHERE
+    c1.customer_id < c2.customer_id AND
+    r1.rental_id != r2.rental_id AND
+    f.film_id = i1.film_id
+    -- AND (c1.first_name, c1.last_name) < (c2.first_name, c2.last_name) -- cela réduit le nombre de ligne, voir si c'est mieux
+GROUP BY
+    prenom_1,
+    nom_1,
+    prenom_2,
+    nom_2
+ORDER BY
+    prenom_1,
+    nom_1,
+    prenom_2,
+    nom_2; -- normalement ok
 -- END Exercice 05
 
 -- BEGIN Exercice 06
@@ -248,18 +266,34 @@ GROUP BY film.film_id,
          film.title
 HAVING COUNT(film_actor.actor_id) < 5
 ORDER BY nb_acteurs DESC;
+
+SELECT
+    f.title AS titre,
+    COUNT(fa.actor_id) AS nb_acteurs
+FROM film AS f
+JOIN film_category AS fc
+    ON f.film_id = fc.film_id
+JOIN film_actor AS fa
+    ON f.film_id = fa.film_id
+JOIN category AS c
+    ON fc.category_id = c.category_id
+WHERE c.name = 'Drama'
+GROUP BY f.film_id
+HAVING COUNT(fa.actor_id) < 5
+ORDER BY nb_acteurs DESC; -- ok avec un join de moin
 -- END Exercice 10
 
 -- BEGIN Exercice 11
-SELECT category.category_id         AS id,
-       category.name                AS nom,
-       COUNT(film_category.film_id) AS nb_films
-FROM category
-         JOIN film_category ON category.category_id = film_category.category_id
-GROUP BY category.category_id,
-         category.name
-HAVING COUNT(film_category.film_id) > 65
-ORDER BY nb_films;
+SELECT c.category_id         AS id,
+       c.name                AS nom,
+       COUNT(fc.film_id) AS nb_films
+FROM category AS c
+         JOIN film_category AS fc
+             ON c.category_id = fc.category_id
+GROUP BY c.category_id,
+         c.name
+HAVING COUNT(fc.film_id) > 65
+ORDER BY nb_films; -- ok
 -- END Exercice 11
 
 -- BEGIN Exercice 12
@@ -269,6 +303,20 @@ SELECT film.film_id AS id,
 FROM film
 WHERE film.length = (SELECT MIN(length)
                      FROM film);
+
+SELECT
+    f.film_id AS id,
+    f.title AS titre,
+    f.length AS duree
+FROM
+    film f
+JOIN (
+    SELECT
+        MIN(length) AS min_length
+    FROM
+        film
+) AS min_duration
+    ON f.length = min_duration.min_length; -- avec join au lieu de where
 -- END Exercice 12
 
 
@@ -289,17 +337,21 @@ ORDER BY film.title;
 
 
 -- BEGIN Exercice 13b
-SELECT DISTINCT film.film_id AS id,
-                film.title   AS titre
-FROM film
-         JOIN film_actor ON film.film_id = film_actor.film_id
-         JOIN (SELECT actor.actor_id
-               FROM actor
-                        JOIN film_actor ON actor.actor_id = film_actor.actor_id
-               GROUP BY actor.actor_id
-               HAVING COUNT(film_actor.film_id) > 40) AS famous_actors
-              ON film_actor.actor_id = famous_actors.actor_id
-ORDER BY film.title;
+SELECT DISTINCT f.film_id AS id,
+                f.title   AS titre
+FROM film AS f
+JOIN film_actor AS fa
+    ON f.film_id = fa.film_id
+JOIN (
+        SELECT a.actor_id
+        FROM actor AS a
+        JOIN film_actor
+            ON a.actor_id = film_actor.actor_id
+        GROUP BY a.actor_id
+        HAVING COUNT(film_actor.film_id) > 40
+    ) AS famous_actors
+    ON fa.actor_id = famous_actors.actor_id
+ORDER BY f.title; -- ok je crois
 -- END Exercice 13b
 
 -- BEGIN Exercice 14
@@ -311,22 +363,26 @@ FROM film;
 
 -- BEGIN Exercice 15
 -- Requête pour obtenir le montant total dépensé et le nombre de locations pour chaque client
-WITH ClientStats AS (SELECT customer.customer_id    AS id,
-                            customer.last_name      AS nom,
-                            customer.email,
-                            country.country         AS pays,
-                            COUNT(rental.rental_id) AS nb_locations,
-                            SUM(payment.amount)     AS depense_totale,
-                            AVG(payment.amount)     AS depense_moyenne
-                     FROM customer
-                              JOIN address ON customer.address_id = address.address_id
-                              JOIN city ON address.city_id = city.city_id
-                              JOIN country ON city.country_id = country.country_id
-                              LEFT JOIN rental ON customer.customer_id = rental.customer_id
-                              LEFT JOIN payment ON rental.rental_id = payment.rental_id
-                     WHERE country.country IN ('Switzerland', 'France', 'Germany')
-                     GROUP BY customer.customer_id, country.country)
-
+WITH clientStats AS (SELECT cu.customer_id     AS id,
+                            cu.last_name       AS nom,
+                            cu.email           AS email,
+                            co.country         AS pays,
+                            COUNT(r.rental_id) AS nb_locations,
+                            SUM(p.amount)      AS depense_totale,
+                            AVG(p.amount)      AS depense_moyenne
+                     FROM customer AS cu
+                              JOIN address AS a
+                                  ON cu.address_id = a.address_id
+                              JOIN city AS ci
+                                  ON a.city_id = ci.city_id
+                              JOIN country AS co
+                                  ON ci.country_id = co.country_id
+                              LEFT JOIN rental AS r
+                                  ON cu.customer_id = r.customer_id
+                              LEFT JOIN payment AS p
+                                  ON r.rental_id = p.rental_id
+                     WHERE co.country IN ('Switzerland', 'France', 'Germany')
+                     GROUP BY cu.customer_id, co.country)
 -- Requête principale pour obtenir les clients dont la dépense moyenne par location est supérieure à 3.0
 SELECT id,
        nom,
@@ -335,17 +391,17 @@ SELECT id,
        nb_locations,
        depense_totale,
        depense_moyenne
-FROM ClientStats
+FROM clientStats
 WHERE depense_moyenne > 3.0
 ORDER BY pays,
-         nom;
+         nom; -- ok
 -- END Exercice 15
 
 
 -- BEGIN Exercice 16a
 SELECT COUNT(*) AS nb_paiements_inf_ou_egaux_a_9
 FROM payment
-WHERE amount <= 9;
+WHERE amount <= 9; -- ok
 -- END Exercice 16a
 
 /* -------------------------------------------------------------------------------------------------
@@ -356,64 +412,111 @@ WHERE amount <= 9;
 -- BEGIN Exercice 16b
 DELETE
 FROM payment
-WHERE amount <= 9;
+WHERE amount <= 9; -- ok
 -- END Exercice 16b
 
 -- BEGIN Exercice 16c
 SELECT COUNT(*) AS nb_paiements_apres_effacement
 FROM payment
-WHERE amount <= 9;
+WHERE amount <= 9; -- ok
 -- END Exercice 16c
 
 
 -- BEGIN Exercice 17
+--SELECT COUNT(*) FROM payment WHERE amount > 4; -- 7746
+--SELECT COUNT(*) FROM payment WHERE amount > 4 * 1.5; -- 2651
+
 UPDATE payment
-SET amount       = amount * 1.5, -- Augmentation de 50% pour les paiements de plus de 4$
-    payment_date = CURRENT_TIMESTAMP; -- Mise à jour de la date de paiement avec la date courante du serveur
-WHERE
-    amount > 4;
+SET
+    payment_date = CASE
+        WHEN amount > 4.0
+            THEN CURRENT_TIMESTAMP
+        ELSE payment_date
+    END,
+    amount = CASE
+        WHEN amount > 4.0
+            THEN amount * 1.5  -- Augmentation de 50% pour les paiements de plus de 4$
+        ELSE amount
+    END; -- ok
+
+--SELECT COUNT(*) FROM payment WHERE amount > 4; -- 7746
+--SELECT COUNT(*) FROM payment WHERE amount > 4 * 1.5; -- 7746
 -- END Exercice 17
 
 
 -- BEGIN Exercice 18
-INSERT INTO customer (store_id, first_name, last_name, email, address_id, active)
-VALUES (1, -- Magasin 1
-        'Guillaume', -- Prénom
-        'Ransome', -- Nom
-        'gr@bluewin.ch', -- E-mail
-        (
-            -- Sous-requête pour récupérer l'identifiant de l'adresse ou l'insérer si elle n'existe pas
-            INSERT INTO address (address, city_id, phone)
-        VALUES (
-            'Rue du centre, 1260 Nyon',  -- Adresse
-            (
-                -- Sous-requête pour récupérer l'identifiant de la ville ou l'insérer si elle n'existe pas
-                INSERT INTO city (city, country_id)
-                VALUES (
-                    'Nyon',  -- Ville
+--SELECT * FROM city WHERE city = 'Nyon'; -- n'existe pas il faut l'ajouter
+INSERT INTO city (city, country_id, last_update)
+      VALUES (
+              'Nyon',
                     (
-                        -- Sous-requête pour récupérer l'identifiant du pays ou l'insérer si elle n'existe pas
-                        INSERT INTO country (country)
-                        VALUES ('Switzerland')
-                        ON CONFLICT (country) DO NOTHING
-                        RETURNING country_id
-                    )
-                )
-                ON CONFLICT (city, country_id) DO NOTHING
-                RETURNING city_id
-            ),
-            '021/360.00.00'  -- Téléphone
-        )
-        ON CONFLICT (address, city_id, phone) DO NOTHING
-        RETURNING address_id
-            ),
-        1 -- Actif
-       );
+                    SELECT country_id
+                    FROM country
+                    WHERE country = 'Switzerland'
+                    LIMIT 1 -- TODO : mmm vraiment nul faut trouver qqch de mieux
+                    ),
+              CURRENT_TIMESTAMP
+             ); -- ok
+
+INSERT INTO address (address, address2, district, city_id, postal_code, phone, last_update)
+    VALUES (
+            'Rue du centre',
+            '?num?',
+            'Vaud',
+                (
+                SELECT city_id
+                 FROM city
+                 WHERE city = 'Nyon'
+                 LIMIT 1 -- TODO : mmm vraiment nul faut trouver qqch de mieux
+                ),
+            '1260',
+            '021/360.00.00',
+            CURRENT_TIMESTAMP
+            );
+
+INSERT INTO customer (store_id, first_name, last_name, email, address_id, active, create_date, last_update)
+    VALUES (
+            1,
+            'Guillaume',
+            'Ransome',
+            'gr@bluewin.ch',
+                (
+                SELECT address_id
+                FROM address
+                WHERE postal_code = '1260'
+                LIMIT 1 -- TODO : mmm vraiment nul faut trouver qqch de mieux
+                ),
+            true,
+            CURRENT_TIMESTAMP,
+            CURRENT_TIMESTAMP
+           ); -- attention si plusieurs villes ont le même postal_code peut provoquer des erreurs
+
+--SELECT * FROM address Where city_id IN (SELECT city_id FROM city WHERE country_id IN (SELECT country_id FROM country WHERE country = 'Switzerland'));
 -- END Exercice 18
+
+-- BEGIN Exercice 18b
+--Car il est géré par la base de donnée, c'est un serial, afin qu'il n'y en ai pas deux identique
+-- END Exercice 18b
+
+-- BEGIN Exercice 18c
+WITH new_city AS (
+  INSERT INTO city (city, country_id, last_update)
+      VALUES ('Nyon', (SELECT country_id FROM country WHERE country = 'Switzerland'), CURRENT_TIMESTAMP)
+  RETURNING city_id
+),
+new_address AS (
+  INSERT INTO address (address, address2, district, city_id, postal_code, phone, last_update)
+      VALUES ('Rue du centre', '?num?', 'Vaud', (SELECT city_id FROM new_city), '1260', '021/360.00.00', CURRENT_TIMESTAMP)
+  RETURNING address_id
+)
+INSERT INTO customer (store_id, first_name, last_name, email, address_id, active, create_date, last_update)
+    VALUES (1, 'Guillaume', 'Ransome', 'gr@bluewin.ch', (SELECT address_id FROM new_address), true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+RETURNING customer_id; -- pas nécessaire mais nous donne son id
+-- END Exercice 18c
 
 -- BEGIN Exercice 18d
 SELECT *
 FROM customer
-WHERE first_name = 'Guillaume'
-  AND last_name = 'Ransome';
+WHERE first_name = 'Guillaume' AND
+      last_name = 'Ransome';
 -- END Exercice 18d

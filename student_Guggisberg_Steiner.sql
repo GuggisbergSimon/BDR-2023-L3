@@ -21,7 +21,6 @@ ORDER BY f.title;
 -- END Exercice 02
 
 -- BEGIN Exercice 03
-/* JOIN marche aussi à la place de LEFT JOIN */
 SELECT country     AS country,
        city        AS city,
        postal_code AS postal_code
@@ -44,46 +43,43 @@ SELECT cu.customer_id,
        cu.last_name  AS nom
 FROM customer AS cu
          JOIN address AS a
-             ON cu.address_id = a.address_id
+              ON cu.address_id = a.address_id
 WHERE a.city_id = 171
   AND cu.store_id = 1
 ORDER BY cu.first_name;
 -- END Exercice 04
 
 -- BEGIN Exercice 05
-SELECT
-    c1.first_name AS prenom_1,
-    c1.last_name AS nom_1,
-    c2.first_name AS prenom_2,
-    c2.last_name AS nom_2
+-- TODO option pour éventuellement réduire d'avantages lignes, voir ci dessous
+SELECT c1.first_name AS prenom_1,
+       c1.last_name  AS nom_1,
+       c2.first_name AS prenom_2,
+       c2.last_name  AS nom_2
 FROM customer AS c1
-JOIN rental AS r1
-    ON c1.customer_id = r1.customer_id
-JOIN inventory AS i1
-    ON r1.inventory_id = i1.inventory_id
-JOIN film AS f
-    ON i1.film_id = f.film_id
-JOIN inventory AS i2
-    ON f.film_id = i2.film_id
-JOIN rental AS r2
-    ON i2.inventory_id = r2.inventory_id
-JOIN customer AS c2
-    ON r2.customer_id = c2.customer_id
-WHERE
-    c1.customer_id < c2.customer_id AND
-    r1.rental_id != r2.rental_id AND
-    f.film_id = i1.film_id
-    -- AND (c1.first_name, c1.last_name) < (c2.first_name, c2.last_name) -- cela réduit le nombre de ligne, voir si c'est mieux
-GROUP BY
-    prenom_1,
-    nom_1,
-    prenom_2,
-    nom_2
-ORDER BY
-    prenom_1,
-    nom_1,
-    prenom_2,
-    nom_2; -- normalement ok
+         JOIN rental AS r1
+              ON c1.customer_id = r1.customer_id
+         JOIN inventory AS i1
+              ON r1.inventory_id = i1.inventory_id
+         JOIN film AS f
+              ON i1.film_id = f.film_id
+         JOIN inventory AS i2
+              ON f.film_id = i2.film_id
+         JOIN rental AS r2
+              ON i2.inventory_id = r2.inventory_id
+         JOIN customer AS c2
+              ON r2.customer_id = c2.customer_id
+WHERE c1.customer_id < c2.customer_id
+  AND r1.rental_id != r2.rental_id
+  AND f.film_id = i1.film_id
+-- AND (c1.first_name, c1.last_name) < (c2.first_name, c2.last_name)
+GROUP BY prenom_1,
+         nom_1,
+         prenom_2,
+         nom_2
+ORDER BY prenom_1,
+         nom_1,
+         prenom_2,
+         nom_2;
 -- END Exercice 05
 
 -- BEGIN Exercice 06
@@ -96,30 +92,25 @@ WHERE actor_id IN (SELECT actor_id
                                      FROM film_category
                                      WHERE category_id IN (SELECT category_id
                                                            FROM category
-                                                           WHERE name = 'Horror'
-                                                           )
-                                     )
-                   )
+                                                           WHERE name = 'Horror')))
   AND (actor.first_name LIKE 'K%' OR actor.last_name LIKE 'D%');
 -- END Exercice 06
 
 -- BEGIN Exercice 07a
 /* rental_rate est le prix pour une rental_duration. rental_duration est en jour */
-SELECT
-    f.film_id AS id,
-    f.title AS titre,
-    f.rental_rate / f.rental_duration AS prix_de_location_par_jour
+SELECT f.film_id                         AS id,
+       f.title                           AS titre,
+       f.rental_rate / f.rental_duration AS prix_de_location_par_jour
 FROM film AS f
-LEFT JOIN inventory AS i
-    ON f.film_id = i.film_id
-LEFT JOIN rental AS r
-    ON i.inventory_id = r.inventory_id
-GROUP BY
-    f.film_id,
-    rental_rate,
-    rental_duration
-HAVING COUNT(r.rental_id) = 0 AND
-       rental_rate / rental_duration <= 1.00;-- ok
+         LEFT JOIN inventory AS i
+                   ON f.film_id = i.film_id
+         LEFT JOIN rental AS r
+                   ON i.inventory_id = r.inventory_id
+GROUP BY f.film_id,
+         rental_rate,
+         rental_duration
+HAVING COUNT(r.rental_id) = 0
+   AND rental_rate / rental_duration <= 1.00;
 -- END Exercice 07a
 
 -- BEGIN Exercice 07b
@@ -178,125 +169,58 @@ WHERE country.country = 'Spain'
 -- END Exercice 08c
 
 -- BEGIN Exercice 09 (Bonus)
-/*
-SELECT customer.customer_id,
-       customer.first_name AS prenom,
-       customer.last_name  AS nom
-FROM customer
-WHERE customer.customer_id IN (SELECT rental.customer_id
-                               FROM rental
-                                        JOIN inventory ON rental.inventory_id = inventory.inventory_id
-                                        JOIN film_actor ON inventory.film_id = film_actor.film_id
-                                        JOIN actor ON film_actor.actor_id = actor.actor_id
-                               WHERE actor.first_name = 'EMILY'
-                                 AND actor.last_name = 'DEE');--*/
-/*
--- films ids :
-SELECT count(film.film_id)
-FROM film
-LEFT JOIN film_actor
-    ON film.film_id = film_actor.film_id
-LEFT JOIN actor
-    ON film_actor.actor_id = actor.actor_id
-WHERE
-    actor.first_name = 'EMILY' AND
-    actor.last_name = 'DEE';
-
-SELECT
-    customer_id,
-    count(customer_id) AS number_of_rental
-FROM rental
-LEFT JOIN inventory
-    ON rental.inventory_id = inventory.inventory_id
-WHERE film_id IN
-    (
-    SELECT film.film_id
-    FROM film
-    LEFT JOIN film_actor
-        ON film.film_id = film_actor.film_id
-    LEFT JOIN actor
-        ON film_actor.actor_id = actor.actor_id
-    WHERE
-        actor.first_name = 'EMILY' AND
-        actor.last_name = 'DEE'
-    )
-GROUP BY customer_id
-HAVING count(customer_id) >= 14
-ORDER BY
-    number_of_rental DESC,
-    customer_id DESC;
-*/
-
-WITH filmIds AS (
-    SELECT film_id
-    FROM film_actor AS fa
-    JOIN actor AS a
-        ON fa.actor_id = a.actor_id
-    WHERE
-        a.first_name = 'EMILY' AND
-        a.last_name = 'DEE'
-)
-SELECT
-    c.customer_id,
-    c.first_name AS prenom,
-    c.last_name  AS nom
+WITH filmIds AS (SELECT film_id
+                 FROM film_actor AS fa
+                          JOIN actor AS a
+                               ON fa.actor_id = a.actor_id
+                 WHERE a.first_name = 'EMILY'
+                   AND a.last_name = 'DEE')
+SELECT c.customer_id,
+       c.first_name AS prenom,
+       c.last_name  AS nom
 FROM customer AS c
-JOIN rental AS r
-    ON c.customer_id = r.customer_id
-JOIN inventory AS i
-    ON r.inventory_id = i.inventory_id
-JOIN filmIds AS e
-    ON i.film_id = e.film_id
+         JOIN rental AS r
+              ON c.customer_id = r.customer_id
+         JOIN inventory AS i
+              ON r.inventory_id = i.inventory_id
+         JOIN filmIds AS e
+              ON i.film_id = e.film_id
 GROUP BY c.customer_id
-HAVING
-    COUNT(DISTINCT e.film_id) = (SELECT COUNT(*) FROM filmIds); -- ok
-
+HAVING COUNT(DISTINCT e.film_id) = (SELECT COUNT(*) FROM filmIds);
 -- END Exercice 09 (Bonus)
 
 -- BEGIN Exercice 10
-SELECT film.title                 AS titre,
-       COUNT(film_actor.actor_id) AS nb_acteurs
-FROM film
-         JOIN film_actor ON film.film_id = film_actor.film_id
-         JOIN actor ON film_actor.actor_id = actor.actor_id
-         JOIN film_category ON film.film_id = film_category.film_id
-         JOIN category ON film_category.category_id = category.category_id
-WHERE category.name = 'Drama'
-GROUP BY film.film_id,
-         film.title
-HAVING COUNT(film_actor.actor_id) < 5
-ORDER BY nb_acteurs DESC;
-
-SELECT
-    f.title AS titre,
-    COUNT(fa.actor_id) AS nb_acteurs
+SELECT f.title            AS titre,
+       COUNT(fa.actor_id) AS nb_acteurs
 FROM film AS f
-JOIN film_category AS fc
-    ON f.film_id = fc.film_id
-JOIN film_actor AS fa
-    ON f.film_id = fa.film_id
-JOIN category AS c
-    ON fc.category_id = c.category_id
+         JOIN film_category AS fc
+              ON f.film_id = fc.film_id
+         JOIN film_actor AS fa
+              ON f.film_id = fa.film_id
+         JOIN category AS c
+              ON fc.category_id = c.category_id
 WHERE c.name = 'Drama'
 GROUP BY f.film_id
 HAVING COUNT(fa.actor_id) < 5
-ORDER BY nb_acteurs DESC; -- ok avec un join de moin
+ORDER BY nb_acteurs DESC;
 -- END Exercice 10
 
 -- BEGIN Exercice 11
-SELECT c.category_id         AS id,
-       c.name                AS nom,
+SELECT c.category_id     AS id,
+       c.name            AS nom,
        COUNT(fc.film_id) AS nb_films
 FROM category AS c
          JOIN film_category AS fc
-             ON c.category_id = fc.category_id
+              ON c.category_id = fc.category_id
 GROUP BY c.category_id,
          c.name
 HAVING COUNT(fc.film_id) > 65
-ORDER BY nb_films; -- ok
+ORDER BY nb_films;
 -- END Exercice 11
 
+
 -- BEGIN Exercice 12
+-- TODO ne garder qu'une requête
 SELECT film.film_id AS id,
        film.title   AS titre,
        film.length  AS duree
@@ -304,19 +228,14 @@ FROM film
 WHERE film.length = (SELECT MIN(length)
                      FROM film);
 
-SELECT
-    f.film_id AS id,
-    f.title AS titre,
-    f.length AS duree
-FROM
-    film f
-JOIN (
-    SELECT
-        MIN(length) AS min_length
-    FROM
-        film
-) AS min_duration
-    ON f.length = min_duration.min_length; -- avec join au lieu de where
+-- variante avec join au lieu de where
+SELECT f.film_id AS id,
+       f.title   AS titre,
+       f.length  AS duree
+FROM film f
+         JOIN (SELECT MIN(length) AS min_length
+               FROM film) AS min_duration
+              ON f.length = min_duration.min_length;
 -- END Exercice 12
 
 
@@ -340,18 +259,16 @@ ORDER BY film.title;
 SELECT DISTINCT f.film_id AS id,
                 f.title   AS titre
 FROM film AS f
-JOIN film_actor AS fa
-    ON f.film_id = fa.film_id
-JOIN (
-        SELECT a.actor_id
-        FROM actor AS a
-        JOIN film_actor
-            ON a.actor_id = film_actor.actor_id
-        GROUP BY a.actor_id
-        HAVING COUNT(film_actor.film_id) > 40
-    ) AS famous_actors
-    ON fa.actor_id = famous_actors.actor_id
-ORDER BY f.title; -- ok je crois
+         JOIN film_actor AS fa
+              ON f.film_id = fa.film_id
+         JOIN (SELECT a.actor_id
+               FROM actor AS a
+                        JOIN film_actor
+                             ON a.actor_id = film_actor.actor_id
+               GROUP BY a.actor_id
+               HAVING COUNT(film_actor.film_id) > 40) AS famous_actors
+              ON fa.actor_id = famous_actors.actor_id
+ORDER BY f.title;
 -- END Exercice 13b
 
 -- BEGIN Exercice 14
@@ -372,15 +289,15 @@ WITH clientStats AS (SELECT cu.customer_id     AS id,
                             AVG(p.amount)      AS depense_moyenne
                      FROM customer AS cu
                               JOIN address AS a
-                                  ON cu.address_id = a.address_id
+                                   ON cu.address_id = a.address_id
                               JOIN city AS ci
-                                  ON a.city_id = ci.city_id
+                                   ON a.city_id = ci.city_id
                               JOIN country AS co
-                                  ON ci.country_id = co.country_id
+                                   ON ci.country_id = co.country_id
                               LEFT JOIN rental AS r
-                                  ON cu.customer_id = r.customer_id
+                                        ON cu.customer_id = r.customer_id
                               LEFT JOIN payment AS p
-                                  ON r.rental_id = p.rental_id
+                                        ON r.rental_id = p.rental_id
                      WHERE co.country IN ('Switzerland', 'France', 'Germany')
                      GROUP BY cu.customer_id, co.country)
 -- Requête principale pour obtenir les clients dont la dépense moyenne par location est supérieure à 3.0
@@ -394,14 +311,14 @@ SELECT id,
 FROM clientStats
 WHERE depense_moyenne > 3.0
 ORDER BY pays,
-         nom; -- ok
+         nom;
 -- END Exercice 15
 
 
 -- BEGIN Exercice 16a
 SELECT COUNT(*) AS nb_paiements_inf_ou_egaux_a_9
 FROM payment
-WHERE amount <= 9; -- ok
+WHERE amount <= 9;
 -- END Exercice 16a
 
 /* -------------------------------------------------------------------------------------------------
@@ -412,13 +329,13 @@ WHERE amount <= 9; -- ok
 -- BEGIN Exercice 16b
 DELETE
 FROM payment
-WHERE amount <= 9; -- ok
+WHERE amount <= 9;
 -- END Exercice 16b
 
 -- BEGIN Exercice 16c
 SELECT COUNT(*) AS nb_paiements_apres_effacement
 FROM payment
-WHERE amount <= 9; -- ok
+WHERE amount <= 9;
 -- END Exercice 16c
 
 
@@ -427,17 +344,16 @@ WHERE amount <= 9; -- ok
 --SELECT COUNT(*) FROM payment WHERE amount > 4 * 1.5; -- 2651
 
 UPDATE payment
-SET
-    payment_date = CASE
-        WHEN amount > 4.0
-            THEN CURRENT_TIMESTAMP
-        ELSE payment_date
+SET payment_date = CASE
+                       WHEN amount > 4.0
+                           THEN CURRENT_TIMESTAMP
+                       ELSE payment_date
     END,
-    amount = CASE
-        WHEN amount > 4.0
-            THEN amount * 1.5  -- Augmentation de 50% pour les paiements de plus de 4$
-        ELSE amount
-    END; -- ok
+    amount       = CASE
+                       WHEN amount > 4.0
+                           THEN amount * 1.5 -- Augmentation de 50% pour les paiements de plus de 4$
+                       ELSE amount
+        END;
 
 --SELECT COUNT(*) FROM payment WHERE amount > 4; -- 7746
 --SELECT COUNT(*) FROM payment WHERE amount > 4 * 1.5; -- 7746
@@ -447,49 +363,41 @@ SET
 -- BEGIN Exercice 18
 --SELECT * FROM city WHERE city = 'Nyon'; -- n'existe pas il faut l'ajouter
 INSERT INTO city (city, country_id, last_update)
-      VALUES (
-              'Nyon',
-                    (
-                    SELECT country_id
-                    FROM country
-                    WHERE country = 'Switzerland'
-                    LIMIT 1 -- TODO : mmm vraiment nul faut trouver qqch de mieux
-                    ),
-              CURRENT_TIMESTAMP
-             ); -- ok
+VALUES ('Nyon',
+        (SELECT country_id
+         FROM country
+         WHERE country = 'Switzerland'
+         LIMIT 1 -- TODO : mmm vraiment nul faut trouver qqch de mieux
+        ),
+        CURRENT_TIMESTAMP); -- ok
 
 INSERT INTO address (address, address2, district, city_id, postal_code, phone, last_update)
-    VALUES (
-            'Rue du centre',
-            '?num?',
-            'Vaud',
-                (
-                SELECT city_id
-                 FROM city
-                 WHERE city = 'Nyon'
-                 LIMIT 1 -- TODO : mmm vraiment nul faut trouver qqch de mieux
-                ),
-            '1260',
-            '021/360.00.00',
-            CURRENT_TIMESTAMP
-            );
+VALUES ('Rue du centre',
+        '?num?',
+        'Vaud',
+        (SELECT city_id
+         FROM city
+         WHERE city = 'Nyon'
+         LIMIT 1 -- TODO : mmm vraiment nul faut trouver qqch de mieux
+        ),
+        '1260',
+        '021/360.00.00',
+        CURRENT_TIMESTAMP);
 
 INSERT INTO customer (store_id, first_name, last_name, email, address_id, active, create_date, last_update)
-    VALUES (
-            1,
-            'Guillaume',
-            'Ransome',
-            'gr@bluewin.ch',
-                (
-                SELECT address_id
-                FROM address
-                WHERE postal_code = '1260'
-                LIMIT 1 -- TODO : mmm vraiment nul faut trouver qqch de mieux
-                ),
-            true,
-            CURRENT_TIMESTAMP,
-            CURRENT_TIMESTAMP
-           ); -- attention si plusieurs villes ont le même postal_code peut provoquer des erreurs
+VALUES (1,
+        'Guillaume',
+        'Ransome',
+        'gr@bluewin.ch',
+        (SELECT address_id
+         FROM address
+         WHERE postal_code = '1260'
+         LIMIT 1 -- TODO : mmm vraiment nul faut trouver qqch de mieux
+        ),
+        true,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP);
+-- attention si plusieurs villes ont le même postal_code peut provoquer des erreurs
 
 --SELECT * FROM address Where city_id IN (SELECT city_id FROM city WHERE country_id IN (SELECT country_id FROM country WHERE country = 'Switzerland'));
 -- END Exercice 18
@@ -500,23 +408,25 @@ INSERT INTO customer (store_id, first_name, last_name, email, address_id, active
 
 -- BEGIN Exercice 18c
 WITH new_city AS (
-  INSERT INTO city (city, country_id, last_update)
-      VALUES ('Nyon', (SELECT country_id FROM country WHERE country = 'Switzerland'), CURRENT_TIMESTAMP)
-  RETURNING city_id
-),
-new_address AS (
-  INSERT INTO address (address, address2, district, city_id, postal_code, phone, last_update)
-      VALUES ('Rue du centre', '?num?', 'Vaud', (SELECT city_id FROM new_city), '1260', '021/360.00.00', CURRENT_TIMESTAMP)
-  RETURNING address_id
-)
-INSERT INTO customer (store_id, first_name, last_name, email, address_id, active, create_date, last_update)
-    VALUES (1, 'Guillaume', 'Ransome', 'gr@bluewin.ch', (SELECT address_id FROM new_address), true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-RETURNING customer_id; -- pas nécessaire mais nous donne son id
+    INSERT INTO city (city, country_id, last_update)
+        VALUES ('Nyon', (SELECT country_id FROM country WHERE country = 'Switzerland'), CURRENT_TIMESTAMP)
+        RETURNING city_id),
+     new_address AS (
+         INSERT INTO address (address, address2, district, city_id, postal_code, phone, last_update)
+             VALUES ('Rue du centre', '?num?', 'Vaud', (SELECT city_id FROM new_city), '1260', '021/360.00.00',
+                     CURRENT_TIMESTAMP)
+             RETURNING address_id)
+INSERT
+INTO customer (store_id, first_name, last_name, email, address_id, active, create_date, last_update)
+VALUES (1, 'Guillaume', 'Ransome', 'gr@bluewin.ch', (SELECT address_id FROM new_address), true, CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP)
+RETURNING customer_id;
+-- pas nécessaire mais nous donne son id
 -- END Exercice 18c
 
 -- BEGIN Exercice 18d
 SELECT *
 FROM customer
-WHERE first_name = 'Guillaume' AND
-      last_name = 'Ransome';
+WHERE first_name = 'Guillaume'
+  AND last_name = 'Ransome';
 -- END Exercice 18d

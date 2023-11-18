@@ -12,6 +12,8 @@
 
 ![img_2.png](img_2.png)
 
+<div style="page-break-after: always;"></div>
+
 ### 4
 
 ![img_3.png](img_3.png)
@@ -19,13 +21,17 @@
 ### 5
 
 Nous avons décidé qu'une paire AB est égale à une paire BA. 
-Sans quoi la requête enverrait un doublon pour chaque paire. 
+Sans quoi la requête enverrait un doublon pour chaque paire.
+
 ![img_4.png](img_4.png)
+
+<div style="page-break-after: always;"></div>
 
 ### 6
 
 ![img_5.png](img_5.png)
 
+<div style="page-break-after: always;"></div>
 
 ### 7a
 
@@ -33,6 +39,8 @@ Le rental_rate est le prix pour une rental_duration.
 rental_duration est en jour.
 
 ![img_6.png](img_6.png)
+
+<div style="page-break-after: always;"></div>
 
 ### 7b
 
@@ -52,6 +60,8 @@ Un seul client a loué tous les films de l'actrice Emily Dee.
 
 ![img_9.png](img_9.png)
 
+<div style="page-break-after: always;"></div>
+
 ### 10
 
 ![img_10.png](img_10.png)
@@ -60,6 +70,8 @@ Un seul client a loué tous les films de l'actrice Emily Dee.
 
 ![img_11.png](img_11.png)
 
+<div style="page-break-after: always;"></div>
+
 ### 12
 
 ![img_12.png](img_12.png)
@@ -67,6 +79,8 @@ Un seul client a loué tous les films de l'actrice Emily Dee.
 ### 13a/13b
 
 ![img_13.png](img_13.png)
+
+<div style="page-break-after: always;"></div>
 
 ### 14
 
@@ -90,6 +104,8 @@ Il faudrait 240 jours pour visionner l'entiéreté des films.
 Comme prévu, le nombre de paiements sont égaux à 0.
 
 ![img_17.png](img_17.png)
+
+<div style="page-break-after: always;"></div>
 
 ### 18b
 

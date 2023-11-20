@@ -1,5 +1,10 @@
 # BDR Labo 1 : Modélisation conceptuelle
 
+Le fichier SQL contenant les requêtes se trouve à la racine du ZIP.
+
+Certaines requêtes mises en commentaires ont été utiles pour vérifier l'exécution des requêtes modifiant la databse.
+Le résultat retourné, et donc attendu, et mis en commentaires à droite de chacun de ces requêtes.
+
 ### 1
 
 ![img.png](img.png)

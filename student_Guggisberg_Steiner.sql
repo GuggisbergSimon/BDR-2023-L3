@@ -54,7 +54,6 @@ ORDER BY cu.first_name;
 -- END Exercice 04
 
 -- BEGIN Exercice 05
--- TODO option pour éventuellement réduire d'avantages lignes, voir ci dessous
 SELECT
 	c1.first_name AS prenom_1,
 	c1.last_name AS nom_1,
@@ -76,7 +75,6 @@ FROM customer AS c1
 WHERE c1.customer_id < c2.customer_id
   AND r1.rental_id != r2.rental_id
   AND f.film_id = i1.film_id
--- AND (c1.first_name, c1.last_name) < (c2.first_name, c2.last_name)
 GROUP BY prenom_1,
 		 nom_1,
 		 prenom_2,
@@ -112,7 +110,6 @@ WHERE actor_id IN (
 -- END Exercice 06
 
 -- BEGIN Exercice 07a
-/* rental_rate est le prix pour une rental_duration. rental_duration est en jour */
 SELECT
 	f.film_id AS id,
 	f.title AS titre,
@@ -268,19 +265,6 @@ ORDER BY nb_films;
 
 
 -- BEGIN Exercice 12
--- TODO ne garder qu'une requête
-SELECT
-	film.film_id AS id,
-	film.title AS titre,
-	film.length AS duree
-FROM film
-WHERE film.length = (
-	SELECT
-		MIN(length)
-	FROM film
-);
-
--- variante avec join au lieu de where
 SELECT
 	f.film_id AS id,
 	f.title AS titre,
@@ -340,7 +324,6 @@ ORDER BY f.title;
 -- END Exercice 13b
 
 -- BEGIN Exercice 14
-/* length est en minutes. la conversion minutes->jours est divisé par 60 * 8 car uniquement 8h par jour (petit joueur) */
 SELECT
 	CEIL(SUM(length) / (60 * 8)) AS nb_jours
 FROM film;
@@ -348,7 +331,6 @@ FROM film;
 
 
 -- BEGIN Exercice 15
--- Requête pour obtenir le montant total dépensé et le nombre de locations pour chaque client
 WITH clientStats AS (
 	SELECT
 		cu.customer_id AS id,
@@ -372,7 +354,6 @@ WITH clientStats AS (
 	WHERE co.country IN ('Switzerland', 'France', 'Germany')
 	GROUP BY cu.customer_id, co.country
 )
--- Requête principale pour obtenir les clients dont la dépense moyenne par location est supérieure à 3.0
 SELECT
 	id,
 	nom,
@@ -446,7 +427,7 @@ VALUES ('Nyon',
 				country_id
 			FROM country
 			WHERE country = 'Switzerland'
-			LIMIT 1 -- TODO : mmm vraiment nul faut trouver qqch de mieux
+			LIMIT 1
 		),
 		CURRENT_TIMESTAMP); -- ok
 
@@ -459,7 +440,7 @@ VALUES ('Rue du centre',
 				city_id
 			FROM city
 			WHERE city = 'Nyon'
-			LIMIT 1 -- TODO : mmm vraiment nul faut trouver qqch de mieux
+			LIMIT 1
 		),
 		'1260',
 		'021/360.00.00',
@@ -475,7 +456,7 @@ VALUES (1,
 				address_id
 			FROM address
 			WHERE postal_code = '1260'
-			LIMIT 1 -- TODO : mmm vraiment nul faut trouver qqch de mieux
+			LIMIT 1
 		),
 		TRUE,
 		CURRENT_TIMESTAMP,
